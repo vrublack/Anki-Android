@@ -28,6 +28,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.support.design.widget.Snackbar;
 import android.support.v4.view.MenuItemCompat;
@@ -110,6 +111,8 @@ public class CardBrowser extends NavigationDrawerActivity implements
 
     // card that was clicked (not marked)
     private long mCurrentCardId;
+
+    private int jumpPosition = -1;
 
     private int mOrder;
     private boolean mOrderAsc;
@@ -488,7 +491,7 @@ public class CardBrowser extends NavigationDrawerActivity implements
         });
         mCardsListView.setOnItemLongClickListener(new ListView.OnItemLongClickListener() {
             @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int position, long id) {
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int position, long id) {
                 loadMultiSelectMode();
 
                 // click on whole cell triggers select
@@ -497,7 +500,30 @@ public class CardBrowser extends NavigationDrawerActivity implements
                 onCheck(position, view);
 
                 mCardsAdapter.notifyDataSetChanged();
+
+                jumpPosition = position;
+
                 return true;
+            }
+        });
+
+        mCardsListView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                if (jumpPosition != -1 && !(jumpPosition >= mCardsListView.getFirstVisiblePosition()
+                        && jumpPosition <= mCardsListView.getLastVisiblePosition())) {
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            // if setselection is called without the delay it doesn't work
+                            mCardsListView.setSelection(jumpPosition);
+                            jumpPosition = -1;
+                        }
+                    }, 50);
+
+                    mCardsListView.setSelection(jumpPosition);
+                }
             }
         });
 
